@@ -2,109 +2,113 @@ import math
 import random
 
 # Tabuleiro representado como lista de 9 elementos
-board = [" " for _ in range(9)]
+tabuleiro = [" " for _ in range(9)]
 
-def print_board():
+def mostrar_tabuleiro():
+    print("-" * 13)
     for i in range(3):
-        print(board[i*3:(i+1)*3])
+        linha = [tabuleiro[i * 3 + j] for j in range(3)]
+        print("| " + " | ".join(linha) + " |")
+        if i < 2:
+            print("|---|---|---|")
+    print("-" * 13)
 
-def check_winner(b):
-    win_combos = [
-        [0,1,2], [3,4,5], [6,7,8], # linhas
-        [0,3,6], [1,4,7], [2,5,8], # colunas
-        [0,4,8], [2,4,6]           # diagonais
+def verificar_vencedor(b):
+    posicoes = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # linhas
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # colunas
+        [0, 4, 8], [2, 4, 6]              # diagonais
     ]
-    for combo in win_combos:
-        if b[combo[0]] == b[combo[1]] == b[combo[2]] != " ":
-            return b[combo[0]]
+    for posicao in posicoes:
+        if b[posicao[0]] == b[posicao[1]] == b[posicao[2]] != " ":
+            return b[posicao[0]]
     if " " not in b:
         return "Empate"
     return None
 
-def minimax(b, is_maximizing, depth = 1):
-    winner = check_winner(b)
-    if winner == "X":
+def minimax(b, melhor_jogada, profundidade):
+    resultado = verificar_vencedor(b)
+    if resultado == "X":
         return 1
-    elif winner == "O":
+    elif resultado == "O":
         return -1
-    elif winner == "Empate" or depth == 0:
+    elif resultado == "Empate" or profundidade == 0:
         return 0
 
-    if is_maximizing:
-        best_score = -math.inf
+    print(f"Possibilidades testadas: ${profundidade}") # Print interessante, mostra a IA pensando
+    if melhor_jogada:
+        melhor_pontuacao = -math.inf
         for i in range(9):
             if b[i] == " ":
                 b[i] = "X"
-                score = minimax(b, False, depth - 1)
+                pontuacao = minimax(b, False, profundidade - 1)
                 b[i] = " "
-                best_score = max(score, best_score)
-        return best_score
+                melhor_pontuacao = max(melhor_pontuacao, pontuacao)
+        return melhor_pontuacao
     else:
-        best_score = math.inf
+        melhor_pontuacao = math.inf
         for i in range(9):
             if b[i] == " ":
                 b[i] = "O"
-                score = minimax(b, True, depth - 1)
+                pontuacao = minimax(b, True, profundidade - 1)
                 b[i] = " "
-                best_score = min(score, best_score)
-        return best_score
-
-def best_move():
-    best_score = -math.inf
-    move = None
-    depth = 1 # Quantas jogadas vai considerar
+                melhor_pontuacao = min(melhor_pontuacao, pontuacao)
+        return melhor_pontuacao
+def melhor_jogada(profundidade):
+    melhor_pontuacao = -math.inf
+    movimento = None
     for i in range(9):
-        if board[i] == " ":
-            board[i] = "X"
-            score = minimax(board, False, depth)
-            board[i] = " "
-            if score > best_score:
-                best_score = score
-                move = i
-    return move
+        if tabuleiro[i] == " ":
+            tabuleiro[i] = "X"
+            pontuacao = minimax(tabuleiro, False, profundidade - 1) 
+            tabuleiro[i] = " "
+            if pontuacao > melhor_pontuacao:
+                melhor_pontuacao = pontuacao
+                movimento = i
+    return movimento
 
 # Loop do jogo
 print("Você é 'O'. IA é 'X'.")
-dificult = (math.trunc(int(input("Digite 90%, 80% ... 20%, 10% para determinar a nível de dificultade.\nQuanto mais alto, mais díficil/n:\n")) / 10 )) -1
-if dificult < 0:
-    dificult = 0
-while True:
-    print_board()
-    # Jogador humano
-    pos = int(input("Escolha sua posição (0-8): "))
-    if board[pos] != " ":
-        print("Posição ocupada. Tente de novo.")
-        continue
-    board[pos] = "O"
+dificuldade = (math.trunc(int(input("Digite 90%, 80%, ..., 10% para dificuldade (quanto mais alto, mais difícil):\n")) / 10)) - 1
+profundidade = int(input("Determine a profundidade (1 a 8):\n"))
+profundidade = max(1, min(profundidade, 8))
+dificuldade = max(0, dificuldade)
 
-    if check_winner(board):
+while True:
+    mostrar_tabuleiro()
+
+    # Jogador humano
+    try:
+        pos = int(input("Escolha sua posição (0-8): "))
+        if pos < 0 or pos > 8 or tabuleiro[pos] != " ":
+            print("Posição inválida ou ocupada. Tente de novo.")
+            continue
+        tabuleiro[pos] = "O"
+    except ValueError:
+        print("Entrada inválida. Digite um número entre 0 e 8.")
+        continue
+
+    if verificar_vencedor(tabuleiro):
         break
 
     # Jogada da IA
-    lerdo = random.randint(0,dificult) # 20% de jogar em uma posição aleatória, sorteio 0 joga aleatório, de [1,2,3,4] joga BackTracking
-    print(lerdo)
-
-    if lerdo == 0:
-        for i in range(9):
-            if board[i] == " ":
-                disponiveis = [j for j in range(9) if board[j] == " "]
-                
-                break
-        print("lerdo")
+    sorteio = random.randint(0, dificuldade)
+    if sorteio == 0:
+        disponiveis = [i for i in range(9) if tabuleiro[i] == " "]
         jogada = random.choice(disponiveis)
-        print(jogada)
-        board[jogada] = "X"
+        print("IA jogou aleatoriamente.")
     else:
-        ia_move = best_move()
-        board[ia_move] = "X"
-        print("invencível")
+        jogada = melhor_jogada(profundidade)
+        print("IA usou minimax.")
 
-    if check_winner(board):
+    tabuleiro[jogada] = "X"
+
+    if verificar_vencedor(tabuleiro):
         break
 
 # Resultado final
-print_board()
-resultado = check_winner(board)
+mostrar_tabuleiro()
+resultado = verificar_vencedor(tabuleiro)
 if resultado == "Empate":
     print("Deu empate!")
 else:
